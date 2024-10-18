@@ -95,9 +95,47 @@ function GameController(playerOneName = "Player One", playerTwoName = "Player Tw
 
     printNewRound();
 
-    return { playRound, getActivePlayer };
+    return { playRound, getActivePlayer, getBoard: board.getBoard };
 }
 
+// Render the game in the DOM
+function ScreenController() {
+    const game = GameController();
+    const playerTurnDiv = document.querySelector(".turn");
+    const boardDiv = document.querySelector(".board");
+
+    const updateScreen = () => {
+        boardDiv.textContent = "";
+
+        const board = game.getBoard();
+        const activePlayer = game.getActivePlayer();
+
+        playerTurnDiv.textContent = `${activePlayer.name}'s turn...`
+
+        // Render the board squares
+        board.forEach((row, rowIndex) => {
+            row.forEach((cell, columnIndex) => {
+                const cellButton = document.createElement("button");
+                cellButton.classList.add("cell");
+                cellButton.dataset.row = rowIndex; // Track row index
+                cellButton.dataset.column = columnIndex; // Track column index
+                cellButton.textContent = cell.getValue(); // Display cell's value (0, X, O)
+
+                // Add click event listener to each cell button
+                cellButton.addEventListener("click", () => {
+                    game.playRound(rowIndex, columnIndex); // Play a round when a cell is clicked
+                    updateScreen(); // Update the screen after each move
+                });
+
+                boardDiv.appendChild(cellButton); // Append button to boardDiv
+            });
+        });
+    };
+
+    updateScreen(); // Initial render of the game board
+}
+
+ScreenController();
 // Initialize the game controller
 const gameController = GameController();
 
