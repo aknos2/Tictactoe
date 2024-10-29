@@ -23,7 +23,11 @@ const GameBoard = (() => {
         render();
     };
 
-    return {getBoard, render, updateBoard};
+    const renderMessage = (message) => {
+        document.querySelector("#message").innerHTML = message;
+    };
+
+    return {getBoard, render, updateBoard, renderMessage};
 })()
 
 const Game = (() => {
@@ -59,11 +63,57 @@ const Game = (() => {
         GameBoard.updateBoard(index, players[currentPlayerIndex].mark);
         //switch player
         currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
+        //check win or draw condition
+        if (Rules.checkForWin(GameBoard.getBoard())) {
+            gameOver = true;
+            GameBoard.renderMessage(`${players[currentPlayerIndex].value} wins!`);
+            console.log("win")
+        } else if (Rules.checkForDraw(GameBoard.getBoard())) {
+            gameOver = true;
+            GameBoard.renderMessage("It's a draw!");
+        };
     };
 
-    return {start, createPlayer, handleClick};
+    const restart = () => {
+        for (let i = 0; i < 9; i++) {
+            GameBoard.updateBoard(i, "");
+            gameOver = false;
+            GameBoard.renderMessage("");
+        };
+    };
+
+    return {start, createPlayer, handleClick, restart};
 })()
 
+const Rules = (() => {
+    const checkForWin = (board) => {
+        const winningCombinations = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6]
+        ]
+        for (let i = 0; i < winningCombinations.length; i++) {
+          //destructuring
+          const [a,b,c] = winningCombinations[i];
+          //check if "X" or "O" are equal
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return true;
+          }
+        };
+        return false;
+    };
+
+    const checkForDraw = (board) => {
+        return board.every((cell) => cell !== "");
+    };
+
+    return {checkForDraw, checkForWin};
+})()
 
 const startButton = document.querySelector("#start-button");
 startButton.addEventListener("click", () => {
