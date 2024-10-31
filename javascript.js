@@ -1,5 +1,9 @@
 "use strict";
 
+const startButton = document.querySelector("#submit-btn");
+const restartButton = document.querySelector("#restart-button");
+
+
 const GameBoard = (() => {
     const board = ['','','','','','','','',''];
 
@@ -31,18 +35,34 @@ const GameBoard = (() => {
 })()
 
 const Game = (() => {
+    const namePanel = document.querySelector("#name-panel");
+    const player1turn = document.querySelector("#player1-turn");
+    const player2turn = document.querySelector("#player2-turn");
+    const player1Panel = document.querySelector("#player1-panel");
+    const player2Panel = document.querySelector("#player2-panel");
+
     let players = [];
     let currentPlayerIndex;
     let gameOver;
 
     const start = () => {
+        const player1Name = document.querySelector("#player1").value || "Player 1";
+        const player2Name = document.querySelector("#player2").value || "Player 2";
+
         players = [
-            createPlayer(document.querySelector("#player1"), "X"),
-            createPlayer(document.querySelector("#player2"), "O")
+            createPlayer(player1Name, "X"),
+            createPlayer(player2Name, "O")
         ];
+
         currentPlayerIndex = 0;
         gameOver = false;
+        namePanel.style.visibility = "hidden";
+        restartButton.style.display = "block";
+   
         GameBoard.render();
+        // Initialize turn display
+        player1turn.innerHTML = `${player1Name}'s turn`;
+        transition(player1Panel);
     };
 
     const createPlayer = (name, mark) => {
@@ -61,14 +81,35 @@ const Game = (() => {
         }
         //get the player's mark
         GameBoard.updateBoard(index, players[currentPlayerIndex].mark);
+        //save current player index's name before switching
+        const currentPlayerName = players[currentPlayerIndex].name;
         //switch player
         currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
+        if (currentPlayerIndex === 0) {
+            transition(player1Panel);
+            transitionOff(player2Panel);
+            player1turn.innerHTML = `${players[0].name}'s turn`;
+        } else {
+            transition(player2Panel);
+            transitionOff(player1Panel);
+            player2turn.innerHTML = `${players[1].name}'s turn`;
+        }
         //check win or draw condition
-        if (Rules.checkForWin(GameBoard.getBoard())) {
+        const winningSequence = Rules.checkForWin(GameBoard.getBoard());
+        if (winningSequence) {
+            transitionOff(player1Panel);
+            transitionOff(player2Panel);
             gameOver = true;
-            GameBoard.renderMessage(`${players[currentPlayerIndex].value} wins!`);
-            console.log("win")
+            GameBoard.renderMessage(`${currentPlayerName} wins!`);
+            //highlight winning squares
+            winningSequence.forEach((squareIndex) => {
+                const squareElement = document.getElementById(`square-${squareIndex}`);
+                squareElement.classList.add("winning-marks");
+            })
+
         } else if (Rules.checkForDraw(GameBoard.getBoard())) {
+            transitionOff(player1Panel);
+            transitionOff(player2Panel);
             gameOver = true;
             GameBoard.renderMessage("It's a draw!");
         };
@@ -77,12 +118,26 @@ const Game = (() => {
     const restart = () => {
         for (let i = 0; i < 9; i++) {
             GameBoard.updateBoard(i, "");
-            gameOver = false;
-            GameBoard.renderMessage("");
         };
+        gameOver = false;
+        transitionOff(player1Panel);
+        transitionOff(player2Panel);
+        GameBoard.renderMessage("");
+        namePanel.style.visibility = "visible";
+        restartButton.style.display = "none";
+        GameBoard.render();
     };
 
-    return {start, createPlayer, handleClick, restart};
+    const transition = (player) => {
+        player.style.opacity = "1";
+        player.style.transition = "opacity 0.3s";
+    }
+
+    const transitionOff = (player) => {
+        player.style.opacity = "0";
+    }
+
+    return {start, createPlayer, handleClick, restart, transition, transitionOff};
 })()
 
 const Rules = (() => {
@@ -102,10 +157,10 @@ const Rules = (() => {
           const [a,b,c] = winningCombinations[i];
           //check if "X" or "O" are equal
           if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return true;
+            return [a,b,c];
           }
         };
-        return false;
+        return null;
     };
 
     const checkForDraw = (board) => {
@@ -115,15 +170,14 @@ const Rules = (() => {
     return {checkForDraw, checkForWin};
 })()
 
-const startButton = document.querySelector("#start-button");
+
 startButton.addEventListener("click", () => {
-  Game.start();
-  startButton.disabled = true;
+    Game.start();
+    document.body.style.background = "rgba(18, 32, 76, 0.6)";
 })
 
-const restartButton = document.querySelector("#restart-button");
 restartButton.addEventListener("click", () => {
-  Game.restart();
-  startButton.disabled = false;
-  document.querySelector("#gameboard").innerHTML = "";
+    Game.restart();
+    document.body.style.background = "var(--background-color)"
 })
+
